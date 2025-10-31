@@ -1,27 +1,30 @@
 name: Build
 
 on:
-  push:
+  pull_request:    # Cambiado de 'push' a 'pull_request' para que se active en PRs
     branches:
-      - main
-
+      - main  # Asegúrate de que sea la rama de tu repositorio donde se envían los PRs
 
 jobs:
   build:
     name: Build and analyze
-    runs-on: windows-latest
+    runs-on: ubuntu-latest  # Puedes cambiar a 'windows-latest' si estás usando Windows
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - uses: SonarSource/sonarqube-scan-action@v6
+          fetch-depth: 0  # Deshabilitar clones superficiales para análisis más precisos
+
+      - name: Set up SonarQube
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  # Token de SonarQube
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}  # URL del servidor SonarQube
+
+      # Verifica el estado del Quality Gate de SonarQube (esto es lo que garantiza que el PR pase el análisis)
+      - name: Wait for SonarQube Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      # If you wish to fail your job when the Quality Gate is red, uncomment the
-      # following lines. This would typically be used to fail a deployment.
-      # - uses: SonarSource/sonarqube-quality-gate-action@v1
-      #   timeout-minutes: 5
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          
